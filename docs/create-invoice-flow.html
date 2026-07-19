@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SimpleInvoice — Create Invoice Flow</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --border: #d9dde3;
+    --text: #1c2430;
+    --muted: #6b7480;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --success: #16a34a;
+    --success-bg: #ecfdf3;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 24px 12px;
+  }
+  /* Phone-ish frame since this mocks a RN screen */
+  .app {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 720px;
+  }
+
+  /* ---------- Header ---------- */
+  .app-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .app-header button.back {
+    border: none; background: none; font-size: 18px; cursor: pointer; color: var(--text);
+    width: 32px; height: 32px; border-radius: 6px;
+  }
+  .app-header button.back:hover { background: var(--bg); }
+  .app-header h1 { font-size: 17px; font-weight: 600; }
+
+  /* ---------- Stepper ---------- */
+  .stepper {
+    display: flex;
+    padding: 14px 16px 6px;
+    gap: 6px;
+  }
+  .stepper .seg {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+  .stepper .seg.active { background: var(--primary); }
+  .step-label {
+    padding: 4px 16px 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ---------- Steps ---------- */
+  .step { display: none; padding: 8px 16px 16px; flex: 1; }
+  .step.visible { display: block; }
+  .step h2 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .step p.hint { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; }
+
+  fieldset {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+  legend { font-size: 12px; font-weight: 600; color: var(--muted); padding: 0 4px; text-transform: uppercase; letter-spacing: .03em; }
+
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .row { display: flex; gap: 10px; }
+  .row .field { flex: 1; }
+
+  label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  label .req { color: var(--danger); }
+  input, select, textarea {
+    width: 100%;
+    padding: 9px 10px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--text);
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: -1px;
+    border-color: var(--primary);
+  }
+  input.invalid, select.invalid { border-color: var(--danger); }
+  .err { font-size: 12px; color: var(--danger); margin-top: 3px; display: none; }
+  .field.show-err .err { display: block; }
+  .amount-preview {
+    font-size: 13px; color: var(--muted); margin-top: 6px;
+  }
+
+  /* ---------- Review ---------- */
+  .review-block {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .review-block .rb-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px;
+    background: var(--bg);
+    font-size: 12.5px; font-weight: 600;
+  }
+  .review-block .rb-head a { font-size: 12px; color: var(--primary); cursor: pointer; text-decoration: none; }
+  .review-block dl { padding: 10px 12px; }
+  .review-block dl div { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 13px; }
+  .review-block dt { color: var(--muted); }
+  .review-block dd { text-align: right; word-break: break-word; }
+  details.payload { margin-top: 8px; }
+  details.payload summary { font-size: 12.5px; color: var(--muted); cursor: pointer; }
+  details.payload pre {
+    margin-top: 8px; padding: 10px; background: #0f172a; color: #e2e8f0;
+    font-size: 11px; border-radius: 6px; overflow: auto; max-height: 260px;
+  }
+
+  /* ---------- Success ---------- */
+  .success-wrap { text-align: center; padding: 60px 24px; }
+  .success-wrap .icon {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--success-bg); color: var(--success);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 16px;
+  }
+  .success-wrap h2 { font-size: 17px; margin-bottom: 6px; }
+  .success-wrap p { font-size: 13.5px; color: var(--muted); margin-bottom: 24px; }
+
+  /* ---------- Footer nav ---------- */
+  .footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+  }
+  .btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 14.5px;
+    font-weight: 600;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .btn.primary:hover { background: var(--primary-dark); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="app-header">
+    <button class="back" id="btnBack" aria-label="Back">&#8592;</button>
+    <h1>Create invoice</h1>
+  </header>
+
+  <div class="stepper" id="stepper" aria-hidden="true">
+    <div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div>
+  </div>
+  <div class="step-label" id="stepLabel">Step 1 of 5 — Customer</div>
+
+  <!-- ================= STEP 1: CUSTOMER ================= -->
+  <section class="step" data-step="1">
+    <h2>Customer</h2>
+    <p class="hint">Who this invoice is billed to.</p>
+
+    <fieldset>
+      <legend>Contact</legend>
+      <div class="row">
+        <div class="field" data-required>
+          <label>First name <span class="req">*</span></label>
+          <input name="firstName" placeholder="Nguyen" />
+          <div class="err">First name is required</div>
+        </div>
+        <div class="field" data-required>
+          <label>Last name <span class="req">*</span></label>
+          <input name="lastName" placeholder="Dung" />
+          <div class="err">Last name is required</div>
+        </div>
+      </div>
+      <div class="field" data-required data-type="email">
+        <label>Email <span class="req">*</span></label>
+        <input name="email" type="email" placeholder="customer@example.com" />
+        <div class="err">Enter a valid email address</div>
+      </div>
+      <div class="field" data-required>
+        <label>Mobile number <span class="req">*</span></label>
+        <input name="mobileNumber" type="tel" placeholder="+6597594971" />
+        <div class="err">Mobile number is required</div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Billing address</legend>
+      <div class="field" data-required>
+        <label>Premise <span class="req">*</span></label>
+        <input name="premise" placeholder="CT11" />
+        <div class="err">Premise is required</div>
+      </div>
+      <div class="row">
+        <div class="field" data-required>
+          <label>City <span class="req">*</span></label>
+          <input name="city" placeholder="Hanoi" />
+          <div class="err">City is required</div>
+        </div>
+        <div class="field" data-required>
+          <label>County <span class="req">*</span></label>
+          <input name="county" placeholder="Hoang Mai" />
+          <div class="err">County is required</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field" data-required>
+          <label>Postcode <span class="req">*</span></label>
+          <input name="postcode" placeholder="1000" />
+          <div class="err">Postcode is required</div>
+        </div>
+        <div class="field" data-required>
+          <label>Country <span class="req">*</span></label>
+          <select name="countryCode">
+            <option value="">Select…</option>
+            <option value="VN">Vietnam (VN)</option>
+            <option value="SG">Singapore (SG)</option>
+            <option value="GB">United Kingdom (GB)</option>
+          </select>
+          <div class="err">Country is required</div>
+        </div>
+      </div>
+    </fieldset>
+  </section>
+
+  <!-- ================= STEP 2: INVOICE DETAILS ================= -->
+  <section class="step" data-step="2">
+    <h2>Invoice details</h2>
+    <p class="hint">Reference, currency and dates.</p>
+
+    <fieldset>
+      <legend>Identification</legend>
+      <div class="field" data-required>
+        <label>Invoice number <span class="req">*</span></label>
+        <input name="invoiceNumber" placeholder="INV123456701" />
+        <div class="err">Invoice number is required</div>
+      </div>
+      <div class="field" data-required>
+        <label>Invoice reference <span class="req">*</span></label>
+        <input name="invoiceReference" placeholder="#123456" />
+        <div class="err">Invoice reference is required</div>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea name="description" rows="2" placeholder="Invoice is issued to…"></textarea>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Currency &amp; dates</legend>
+      <div class="field" data-required>
+        <label>Currency <span class="req">*</span></label>
+        <select name="currency">
+          <option value="">Select…</option>
+          <option value="GBP">GBP</option>
+          <option value="USD">USD</option>
+          <option value="SGD">SGD</option>
+          <option value="VND">VND</option>
+        </select>
+        <div class="err">Currency is required</div>
+      </div>
+      <div class="row">
+        <div class="field" data-required>
+          <label>Invoice date <span class="req">*</span></label>
+          <input name="invoiceDate" type="date" />
+          <div class="err">Invoice date is required</div>
+        </div>
+        <div class="field" data-required data-type="dueDate">
+          <label>Due date <span class="req">*</span></label>
+          <input name="dueDate" type="date" />
+          <div class="err">Due date must be on or after the invoice date</div>
+        </div>
+      </div>
+    </fieldset>
+  </section>
+
+  <!-- ================= STEP 3: LINE ITEM ================= -->
+  <section class="step" data-step="3">
+    <h2>Line item</h2>
+    <p class="hint">Each invoice contains a single line item.</p>
+
+    <fieldset>
+      <legend>Item</legend>
+      <div class="field" data-required>
+        <label>Item name <span class="req">*</span></label>
+        <input name="itemName" placeholder="Honda Motor" />
+        <div class="err">Item name is required</div>
+      </div>
+      <div class="field" data-required>
+        <label>Item reference <span class="req">*</span></label>
+        <input name="itemReference" placeholder="itemRef" />
+        <div class="err">Item reference is required</div>
+      </div>
+      <div class="field">
+        <label>Item description</label>
+        <input name="itemDescription" placeholder="Honda RC150" />
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Quantity &amp; rate</legend>
+      <div class="row">
+        <div class="field" data-required data-type="positive">
+          <label>Quantity <span class="req">*</span></label>
+          <input name="quantity" type="number" min="1" step="1" placeholder="1" />
+          <div class="err">Enter a quantity greater than 0</div>
+        </div>
+        <div class="field" data-required data-type="positive">
+          <label>Rate <span class="req">*</span></label>
+          <input name="rate" type="number" min="0.01" step="0.01" placeholder="1000" />
+          <div class="err">Enter a rate greater than 0</div>
+        </div>
+        <div class="field">
+          <label>Unit</label>
+          <select name="itemUOM">
+            <option value="KG">KG</option>
+            <option value="UNIT">UNIT</option>
+            <option value="HOUR">HOUR</option>
+          </select>
+        </div>
+      </div>
+      <div class="amount-preview" id="lineTotal">Line total: —</div>
+    </fieldset>
+  </section>
+
+  <!-- ================= STEP 4: PAYMENT & ADJUSTMENTS ================= -->
+  <section class="step" data-step="4">
+    <h2>Payment &amp; adjustments</h2>
+    <p class="hint">Bank account to be paid into, plus tax / discount.</p>
+
+    <fieldset>
+      <legend>Bank account</legend>
+      <div class="field" data-required>
+        <label>Account name <span class="req">*</span></label>
+        <input name="accountName" placeholder="John Terry" />
+        <div class="err">Account name is required</div>
+      </div>
+      <div class="row">
+        <div class="field" data-required>
+          <label>Sort code <span class="req">*</span></label>
+          <input name="sortCode" placeholder="09-01-01" />
+          <div class="err">Sort code is required</div>
+        </div>
+        <div class="field" data-required>
+          <label>Account number <span class="req">*</span></label>
+          <input name="accountNumber" placeholder="12345678" />
+          <div class="err">Account number is required</div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Adjustments (extensions)</legend>
+      <div class="row">
+        <div class="field">
+          <label>Tax (% add)</label>
+          <input name="taxPercent" type="number" min="0" step="0.1" placeholder="10" />
+        </div>
+        <div class="field">
+          <label>Discount (fixed deduct)</label>
+          <input name="discountFixed" type="number" min="0" step="0.01" placeholder="10.00" />
+        </div>
+      </div>
+    </fieldset>
+  </section>
+
+  <!-- ================= STEP 5: REVIEW ================= -->
+  <section class="step" data-step="5">
+    <h2>Review &amp; confirm</h2>
+    <p class="hint">Check everything before submitting.</p>
+    <div id="reviewContent"></div>
+    <details class="payload">
+      <summary>API payload preview (POST /invoice-service/1.0.0/invoices)</summary>
+      <pre id="payloadPre"></pre>
+    </details>
+  </section>
+
+  <!-- ================= SUCCESS ================= -->
+  <section class="step" data-step="6">
+    <div class="success-wrap">
+      <div class="icon">&#10003;</div>
+      <h2>Invoice created</h2>
+      <p id="successMsg">Your invoice has been created successfully.</p>
+      <button class="btn primary" onclick="location.reload()">Back to invoice list</button>
+    </div>
+  </section>
+
+  <footer class="footer" id="footerNav">
+    <button class="btn" id="btnPrev">Back</button>
+    <button class="btn primary" id="btnNext">Next</button>
+  </footer>
+</div>
+
+<script>
+(function () {
+  const TOTAL_STEPS = 5;
+  const stepNames = ["Customer", "Invoice details", "Line item", "Payment & adjustments", "Review"];
+  let current = 1;
+
+  const steps = document.querySelectorAll(".step");
+  const segs = document.querySelectorAll(".stepper .seg");
+  const stepLabel = document.getElementById("stepLabel");
+  const btnPrev = document.getElementById("btnPrev");
+  const btnNext = document.getElementById("btnNext");
+  const btnBack = document.getElementById("btnBack");
+  const footer = document.getElementById("footerNav");
+
+  function stepEl(n) { return document.querySelector('.step[data-step="' + n + '"]'); }
+
+  function val(name) {
+    const el = document.querySelector('[name="' + name + '"]');
+    return el ? el.value.trim() : "";
+  }
+
+  function render() {
+    steps.forEach(s => s.classList.remove("visible"));
+    stepEl(current).classList.add("visible");
+    segs.forEach((s, i) => s.classList.toggle("active", i < Math.min(current, TOTAL_STEPS)));
+
+    if (current <= TOTAL_STEPS) {
+      stepLabel.textContent = "Step " + current + " of " + TOTAL_STEPS + " — " + stepNames[current - 1];
+      footer.style.display = "flex";
+      btnPrev.disabled = current === 1;
+      btnNext.textContent = current === TOTAL_STEPS ? "Create invoice" : "Next";
+    } else {
+      stepLabel.textContent = "Done";
+      footer.style.display = "none";
+    }
+    if (current === TOTAL_STEPS) buildReview();
+  }
+
+  /* ---------- Validation ---------- */
+  function validateStep(n) {
+    let ok = true;
+    stepEl(n).querySelectorAll(".field[data-required]").forEach(f => {
+      const input = f.querySelector("input, select, textarea");
+      const type = f.dataset.type;
+      let valid = input.value.trim() !== "";
+
+      if (valid && type === "email") {
+        valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim());
+      }
+      if (valid && type === "positive") {
+        valid = parseFloat(input.value) > 0;
+      }
+      if (valid && type === "dueDate") {
+        const inv = val("invoiceDate");
+        valid = !inv || input.value >= inv;
+      }
+      f.classList.toggle("show-err", !valid);
+      input.classList.toggle("invalid", !valid);
+      if (!valid) ok = false;
+    });
+    return ok;
+  }
+
+  /* ---------- Line total preview ---------- */
+  function updateLineTotal() {
+    const q = parseFloat(val("quantity")) || 0;
+    const r = parseFloat(val("rate")) || 0;
+    document.getElementById("lineTotal").textContent =
+      q && r ? "Line total: " + (q * r).toLocaleString() + " " + (val("currency") || "") : "Line total: —";
+  }
+  ["quantity", "rate"].forEach(n =>
+    document.querySelector('[name="' + n + '"]').addEventListener("input", updateLineTotal));
+
+  /* ---------- Payload ---------- */
+  function buildPayload() {
+    const extensions = [];
+    if (val("taxPercent")) extensions.push({ addDeduct: "ADD", type: "PERCENTAGE", value: parseFloat(val("taxPercent")), name: "tax" });
+    if (val("discountFixed")) extensions.push({ addDeduct: "DEDUCT", type: "FIXED_VALUE", value: parseFloat(val("discountFixed")), name: "discount" });
+
+    return {
+      invoices: [{
+        bankAccount: {
+          bankId: "",
+          sortCode: val("sortCode"),
+          accountNumber: val("accountNumber"),
+          accountName: val("accountName")
+        },
+        customer: {
+          firstName: val("firstName"),
+          lastName: val("lastName"),
+          contact: { email: val("email"), mobileNumber: val("mobileNumber") },
+          addresses: [{
+            premise: val("premise"),
+            countryCode: val("countryCode"),
+            postcode: val("postcode"),
+            county: val("county"),
+            city: val("city"),
+            addressType: "BILLING"
+          }]
+        },
+        invoiceReference: val("invoiceReference"),
+        invoiceNumber: val("invoiceNumber"),
+        currency: val("currency"),
+        invoiceDate: val("invoiceDate"),
+        dueDate: val("dueDate"),
+        description: val("description"),
+        extensions: extensions,
+        items: [{
+          itemReference: val("itemReference"),
+          description: val("itemDescription"),
+          quantity: parseFloat(val("quantity")),
+          rate: parseFloat(val("rate")),
+          itemName: val("itemName"),
+          itemUOM: val("itemUOM")
+        }]
+      }]
+    };
+  }
+
+  /* ---------- Review ---------- */
+  function block(title, gotoStep, rows) {
+    return '<div class="review-block">' +
+      '<div class="rb-head"><span>' + title + '</span><a data-goto="' + gotoStep + '">Edit</a></div>' +
+      '<dl>' + rows.map(([k, v]) =>
+        '<div><dt>' + k + '</dt><dd>' + (v || "—") + '</dd></div>').join("") +
+      '</dl></div>';
+  }
+
+  function buildReview() {
+    const rc = document.getElementById("reviewContent");
+    rc.innerHTML =
+      block("Customer", 1, [
+        ["Name", val("firstName") + " " + val("lastName")],
+        ["Email", val("email")],
+        ["Mobile", val("mobileNumber")],
+        ["Address", [val("premise"), val("city"), val("county"), val("postcode"), val("countryCode")].filter(Boolean).join(", ")]
+      ]) +
+      block("Invoice", 2, [
+        ["Number", val("invoiceNumber")],
+        ["Reference", val("invoiceReference")],
+        ["Currency", val("currency")],
+        ["Invoice date", val("invoiceDate")],
+        ["Due date", val("dueDate")]
+      ]) +
+      block("Line item", 3, [
+        ["Item", val("itemName")],
+        ["Qty × rate", val("quantity") + " × " + val("rate") + " / " + val("itemUOM")],
+        ["Line total", ((parseFloat(val("quantity")) || 0) * (parseFloat(val("rate")) || 0)).toLocaleString() + " " + val("currency")]
+      ]) +
+      block("Payment", 4, [
+        ["Account", val("accountName")],
+        ["Sort code", val("sortCode")],
+        ["Account no.", val("accountNumber")],
+        ["Tax", val("taxPercent") ? val("taxPercent") + "% (ADD)" : "—"],
+        ["Discount", val("discountFixed") ? val("discountFixed") + " (DEDUCT)" : "—"]
+      ]);
+
+    rc.querySelectorAll("a[data-goto]").forEach(a =>
+      a.addEventListener("click", () => { current = parseInt(a.dataset.goto, 10); render(); }));
+
+    document.getElementById("payloadPre").textContent = JSON.stringify(buildPayload(), null, 2);
+  }
+
+  /* ---------- Navigation ---------- */
+  btnNext.addEventListener("click", () => {
+    if (current < TOTAL_STEPS) {
+      if (!validateStep(current)) return;
+      current++;
+      render();
+    } else {
+      // Submit: in the real app this POSTs to the Create Invoice API
+      // with Authorization: Bearer <access_token>, org-token, Operation-Mode: SYNC.
+      document.getElementById("successMsg").textContent =
+        "Invoice " + val("invoiceNumber") + " has been created successfully.";
+      current = 6;
+      render();
+    }
+  });
+  btnPrev.addEventListener("click", () => { if (current > 1) { current--; render(); } });
+  btnBack.addEventListener("click", () => { if (current > 1 && current <= TOTAL_STEPS) { current--; render(); } });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,15 +1,24 @@
 import React, { useState } from 'react';
-import { AppButton, AppText, Box, ErrorBanner, Screen, TextField } from '@core/ui';
+import { useForm } from 'react-hook-form';
+import { AppButton, AppText, Box, ElementField, ErrorBanner, Screen } from '@core/ui';
 import { useAuthSession } from '@/app/providers/AuthSessionProvider';
+
+type LoginFormValues = {
+  username: string;
+  password: string;
+};
 
 export function LoginScreen() {
   const { signIn } = useAuthSession();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = async () => {
+  const { control, handleSubmit, formState } = useForm<LoginFormValues>({
+    defaultValues: { username: '', password: '' },
+    mode: 'onChange',
+  });
+
+  const onSubmit = handleSubmit(async ({ username, password }) => {
     setError(null);
     setSubmitting(true);
     try {
@@ -19,31 +28,36 @@ export function LoginScreen() {
       setError(cause instanceof Error ? cause.message : 'Login failed');
       setSubmitting(false);
     }
-  };
+  });
 
   return (
     <Screen scroll>
       <Box gap="md" style={{ paddingTop: 48 }}>
         <AppText variant="title">SimpleInvoice</AppText>
         {error ? <ErrorBanner message={error} /> : null}
-        <TextField
-          label="Username"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-          autoCorrect={false}
+        <ElementField
+          id="username"
+          type="text"
+          name="username"
+          control={control}
+          rules={{ required: 'Username is required' }}
+          inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
+          ui={{ label: 'Username' }}
         />
-        <TextField
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
+        <ElementField
+          id="password"
+          type="text"
+          name="password"
+          control={control}
+          rules={{ required: 'Password is required' }}
+          inputProps={{ secureTextEntry: true }}
+          ui={{ label: 'Password' }}
         />
         <AppButton
           title="Sign in"
           onPress={onSubmit}
           loading={submitting}
-          disabled={!username.trim() || !password}
+          disabled={!formState.isValid}
         />
       </Box>
     </Screen>
