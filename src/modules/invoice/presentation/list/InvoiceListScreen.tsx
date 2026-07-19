@@ -93,7 +93,7 @@ function ListEmpty() {
 
 function InvoiceListContent() {
   const navigation = useNavigation();
-  const { signOut } = useAuthSession();
+  const { signOut, userName } = useAuthSession();
   const { openModal } = useRootModal();
   const {
     keywordInput,
@@ -142,7 +142,14 @@ function InvoiceListContent() {
         justify="space-between"
         style={{ paddingVertical: spacing.md }}
       >
-        <AppText variant="title">Invoices</AppText>
+        <Box>
+          {userName ? (
+            <AppText variant="caption" color={colors.textMuted}>
+              Welcome, {userName}
+            </AppText>
+          ) : null}
+          <AppText variant="title">Invoices</AppText>
+        </Box>
         <Box row gap="sm">
           <IconButton glyph="☰" label="Filter by date" onPress={openFilterModal} />
           <IconButton glyph="⇅" label="Sort" onPress={openSortModal} />

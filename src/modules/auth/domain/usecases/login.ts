@@ -30,6 +30,7 @@ export function makeLoginUseCase(
       accessToken: grant.accessToken,
       orgToken: membership.token,
       expiresAt: Date.now() + grant.expiresInSec * 1000,
+      userName: [user.firstName, user.lastName].filter(Boolean).join(' '),
     };
     // persisted only once both tokens exist — all-or-nothing rule (UC-01)
     await repository.saveSession(session);

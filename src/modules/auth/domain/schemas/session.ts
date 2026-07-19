@@ -32,5 +32,10 @@ export const AuthSessionSchema = z.object({
   orgToken: z.string().min(1),
   /** Epoch millis — expiry check is local, no network needed (UC-03). */
   expiresAt: z.number(),
+  /**
+   * Display name for greetings. `.catch('')` keeps sessions persisted before
+   * this field existed valid on rehydrate instead of forcing a re-login.
+   */
+  userName: z.string().catch(''),
 });
 export type AuthSession = z.infer<typeof AuthSessionSchema>;

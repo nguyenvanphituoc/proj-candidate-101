@@ -25,6 +25,8 @@ export interface AuthSessionContextType {
   signOut: () => void;
   isAuthenticated: () => boolean;
   status: 'rehydrated' | 'rehydrating';
+  /** Display name of the signed-in user; empty when signed out. */
+  userName: string;
 }
 
 export const AuthSessionContext = React.createContext<AuthSessionContextType>({
@@ -32,6 +34,7 @@ export const AuthSessionContext = React.createContext<AuthSessionContextType>({
   signOut: () => {},
   isAuthenticated: () => false,
   status: 'rehydrating',
+  userName: '',
 });
 
 export const AuthSessionProvider = ({
@@ -98,9 +101,11 @@ export const AuthSessionProvider = ({
 
   const isAuthenticated = useCallback(() => session !== null, [session]);
 
+  const userName = session?.userName ?? '';
+
   const value = useMemo(
-    () => ({ signIn, signOut, isAuthenticated, status }),
-    [signIn, signOut, isAuthenticated, status],
+    () => ({ signIn, signOut, isAuthenticated, status, userName }),
+    [signIn, signOut, isAuthenticated, status, userName],
   );
 
   return (
