@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Pressable } from 'react-native';
 import {
   AppButton,
   AppText,
@@ -22,6 +23,7 @@ export function LoginScreen() {
   const { signIn } = useAuthSession();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { control, handleSubmit, formState } = useForm<LoginFormValues>({
     defaultValues: { username: '', password: '' },
@@ -66,8 +68,24 @@ export function LoginScreen() {
               message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
             },
           }}
-          inputProps={{ secureTextEntry: true }}
-          ui={{ label: 'Password' }}
+          inputProps={{ secureTextEntry: !showPassword }}
+          ui={{
+            label: 'Password',
+            rightComponent: (
+              <Pressable
+                onPress={() => setShowPassword(visible => !visible)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  showPassword ? 'Hide password' : 'Show password'
+                }
+              >
+                <AppText color={colors.textMuted}>
+                  {showPassword ? '🙈' : '👁'}
+                </AppText>
+              </Pressable>
+            ),
+          }}
         />
         <AppButton
           title="Sign in"

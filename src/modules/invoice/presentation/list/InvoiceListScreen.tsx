@@ -11,6 +11,7 @@ import {
   Screen,
   spacing,
   Spinner,
+  useRootModal,
 } from '@core/ui';
 import { useAuthSession } from '@/app/providers/AuthSessionProvider';
 
@@ -93,6 +94,7 @@ function ListEmpty() {
 function InvoiceListContent() {
   const navigation = useNavigation();
   const { signOut } = useAuthSession();
+  const { openModal } = useRootModal();
   const {
     keywordInput,
     setKeywordInput,
@@ -122,6 +124,16 @@ function InvoiceListContent() {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  const confirmSignOut = useCallback(() => {
+    openModal({
+      type: 'confirm',
+      title: 'Sign out',
+      message: 'Are you sure you want to sign out?',
+      confirmLabel: 'Sign out',
+      onConfirm: signOut,
+    });
+  }, [openModal, signOut]);
+
   return (
     <Screen>
       <Box
@@ -134,7 +146,7 @@ function InvoiceListContent() {
         <Box row gap="sm">
           <IconButton glyph="☰" label="Filter by date" onPress={openFilterModal} />
           <IconButton glyph="⇅" label="Sort" onPress={openSortModal} />
-          <IconButton glyph="⏻" label="Sign out" onPress={signOut} />
+          <IconButton glyph="⏻" label="Sign out" onPress={confirmSignOut} />
         </Box>
       </Box>
 

@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { ConfirmModal } from './Confirm/ConfirmModal';
 import { InvoiceFilterModal } from './InvoiceFilter/InvoiceFilterModal';
 import { InvoiceSortModal } from './InvoiceSort/InvoiceSortModal';
 import { LoadingModal } from './Loading/LoadingModal';
@@ -12,6 +13,7 @@ const modalComponentMap: Record<
   loading: LoadingModal,
   'invoice-filter': InvoiceFilterModal,
   'invoice-sort': InvoiceSortModal,
+  confirm: ConfirmModal,
 };
 
 export function getComponent(
@@ -26,6 +28,7 @@ const backdropDismissMap: Record<ModalPropsType['type'], boolean> = {
   loading: false,
   'invoice-filter': true,
   'invoice-sort': true,
+  confirm: true,
 };
 
 export function isBackdropDismissable(type: ModalPropsType['type']): boolean {

@@ -39,11 +39,24 @@ export interface InvoiceSortModalPropsType {
   onApply: (value: InvoiceSortValue) => void;
 }
 
+export interface ConfirmModalPropsType {
+  type: 'confirm';
+  title?: string;
+  message: string;
+  /** Defaults to "Confirm". */
+  confirmLabel?: string;
+  /** Defaults to "Cancel". */
+  cancelLabel?: string;
+  /** Called after the modal closes when the user confirms. */
+  onConfirm: () => void;
+}
+
 // Union of all modal variant props — extend here when adding new modal types
 export type ModalPropsType =
   | LoadingModalPropsType
   | InvoiceFilterModalPropsType
-  | InvoiceSortModalPropsType;
+  | InvoiceSortModalPropsType
+  | ConfirmModalPropsType;
 
 // ─── Context Type ─────────────────────────────────────────────────────────────
 
@@ -61,7 +74,8 @@ type ContextVariant<T extends ModalPropsType> = T & BaseModalActionType;
 export type ModalContextType =
   | ContextVariant<LoadingModalPropsType>
   | ContextVariant<InvoiceFilterModalPropsType>
-  | ContextVariant<InvoiceSortModalPropsType>;
+  | ContextVariant<InvoiceSortModalPropsType>
+  | ContextVariant<ConfirmModalPropsType>;
 
 // ─── Controller ───────────────────────────────────────────────────────────────
 
