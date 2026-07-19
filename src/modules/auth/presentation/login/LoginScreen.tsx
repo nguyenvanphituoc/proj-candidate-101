@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { AppButton, AppText, Box, ElementField, ErrorBanner, Screen } from '@core/ui';
+import {
+  AppButton,
+  AppText,
+  Box,
+  colors,
+  ElementField,
+  ErrorBanner,
+  Screen,
+} from '@core/ui';
 import { useAuthSession } from '@/app/providers/AuthSessionProvider';
+
+import { PASSWORD_MIN_LENGTH } from '../../domain/schemas';
 
 type LoginFormValues = {
   username: string;
@@ -49,7 +59,13 @@ export function LoginScreen() {
           type="text"
           name="password"
           control={control}
-          rules={{ required: 'Password is required' }}
+          rules={{
+            required: 'Password is required',
+            minLength: {
+              value: PASSWORD_MIN_LENGTH,
+              message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
+            },
+          }}
           inputProps={{ secureTextEntry: true }}
           ui={{ label: 'Password' }}
         />
@@ -59,6 +75,13 @@ export function LoginScreen() {
           loading={submitting}
           disabled={!formState.isValid}
         />
+        <AppText
+          variant="caption"
+          color={colors.textMuted}
+          style={{ textAlign: 'center' }}
+        >
+          Demo credentials: demo / demo123
+        </AppText>
       </Box>
     </Screen>
   );

@@ -18,6 +18,7 @@ import {
   useCreateInvoiceFlow,
 } from './context';
 import { Stepper } from './shared/Stepper';
+import { useCreateInvoiceMutation } from './useCreateInvoiceMutation';
 import { CustomerStep } from './steps/CustomerStep';
 import { InvoiceDetailsStep } from './steps/InvoiceDetailsStep';
 import { LineItemStep } from './steps/LineItemStep';
@@ -30,8 +31,10 @@ import { ReviewStep } from './steps/ReviewStep';
  * Step state + per-step validation live in CreateInvoiceFormProvider.
  */
 export function CreateInvoiceScreen() {
+  const { mutateAsync: submitInvoice } = useCreateInvoiceMutation();
+
   return (
-    <CreateInvoiceFormProvider>
+    <CreateInvoiceFormProvider onSubmit={submitInvoice}>
       <CreateInvoiceWizard />
     </CreateInvoiceFormProvider>
   );

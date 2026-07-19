@@ -13,10 +13,6 @@ import {
 } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import {
-  buildCreateInvoicePayload,
-  CreateInvoicePayload,
-} from '../../data/invoiceMapper';
 import { InvoiceDraft, InvoiceDraftSchema } from '../../domain/schemas';
 import { invoiceDraftDefaultValues } from './form';
 
@@ -95,10 +91,10 @@ interface CreateInvoiceFormProviderProps {
   children: React.ReactNode;
   /**
    * Submission hook point — the create-invoice mutation
-   * (useCreateInvoiceMutation, TECH_SPEC §4) plugs in here. Defaults to a
-   * no-op so the flow is demoable before the data layer lands.
+   * (useCreateInvoiceMutation) plugs in here; it takes the validated draft
+   * and the data layer shapes the payload (invoiceMapper).
    */
-  onSubmit?: (payload: CreateInvoicePayload) => Promise<void>;
+  onSubmit?: (draft: InvoiceDraft) => Promise<unknown>;
 }
 
 export function CreateInvoiceFormProvider({
@@ -127,12 +123,17 @@ export function CreateInvoiceFormProvider({
       async values => {
         setStatus('submitting');
         try {
-          await onSubmit?.(buildCreateInvoicePayload(values));
+          await onSubmit?.(values);
           setStatus('success');
-        } catch {
+        } catch (cause) {
+          // user input is preserved; server validation messages surface on
+          // the form (UC-06 error rules)
           setStatus('editing');
           form.setError('root', {
-            message: 'Could not create the invoice. Please try again.',
+            message:
+              cause instanceof Error && cause.message
+                ? cause.message
+                : 'Could not create the invoice. Please try again.',
           });
         }
       },

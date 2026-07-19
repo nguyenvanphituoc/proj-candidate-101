@@ -1,4 +1,5 @@
 import type { IInvoiceRepository } from '../domain/repositories/IInvoiceRepository';
+import type { InvoiceDraft } from '../domain/schemas';
 import type {
   Invoice,
   InvoiceListPage,
@@ -6,6 +7,7 @@ import type {
 } from '../domain/schemas/invoice';
 import { INVOICE_STATUSES, InvoiceSchema } from '../domain/schemas/invoice';
 import { queryInvoices } from './invoiceListQuery';
+import { buildCreateInvoicePayload } from './invoiceMapper';
 
 /**
  * Stand-in for InvoiceRepositoryImpl until core/network + the sandbox
@@ -63,6 +65,55 @@ export class InvoiceRepositoryMock implements IInvoiceRepository {
   async getInvoices(query: InvoiceQuery): Promise<InvoiceListPage> {
     await new Promise<void>(resolve => setTimeout(() => resolve(), NETWORK_DELAY_MS));
     return queryInvoices(this.all, query);
+  }
+
+  async createInvoice(draft: InvoiceDraft): Promise<Invoice> {
+    await new Promise<void>(resolve => setTimeout(() => resolve(), NETWORK_DELAY_MS));
+
+    // Same shaping the real repository will send; the mock then plays server:
+    // duplicate-number rejection and total computation happen "server-side".
+    const payload = buildCreateInvoicePayload(draft).invoices[0];
+
+    if (
+      this.all.some(
+        invoice =>
+          invoice.invoiceNumber.toLowerCase() ===
+          payload.invoiceNumber.toLowerCase(),
+      )
+    ) {
+      throw new Error(
+        `Invoice number ${payload.invoiceNumber} already exists.`,
+      );
+    }
+
+    const item = payload.items[0];
+    const subtotal = item.quantity * item.rate;
+    const total = payload.extensions.reduce((sum, extension) => {
+      const amount =
+        extension.type === 'PERCENTAGE'
+          ? (subtotal * extension.value) / 100
+          : extension.value;
+      return extension.addDeduct === 'ADD' ? sum + amount : sum - amount;
+    }, subtotal);
+
+    const created = InvoiceSchema.parse({
+      invoiceId: `id-created-${Date.now()}`,
+      invoiceNumber: payload.invoiceNumber,
+      invoiceReference: payload.invoiceReference,
+      customerName: `${payload.customer.firstName} ${payload.customer.lastName}`,
+      status: 'Pending',
+      currency: payload.currency,
+      totalAmount: Math.round(total * 100) / 100,
+      createdDate: isoDate(new Date()),
+      dueDate: payload.dueDate,
+      description: payload.description,
+      itemName: item.itemName,
+      quantity: item.quantity,
+      rate: item.rate,
+    });
+
+    this.all.unshift(created);
+    return created;
   }
 }
 
