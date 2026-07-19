@@ -3,7 +3,15 @@
   "compilerOptions": {
     "types": [
       "jest"
-    ]
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@core/*": [
+        "./src/core/*"
+      ]
+    }
   },
   "include": [
     "**/*.ts",
@@ -12,11 +20,5 @@
   "exclude": [
     "**/node_modules",
     "**/Pods"
-  ],
-  "baseUrl": ".",
-  "paths": {
-    "@/*": [
-      "src/*"
-    ]
-  }
+  ]
 }

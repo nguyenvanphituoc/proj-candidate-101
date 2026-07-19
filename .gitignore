@@ -79,4 +79,9 @@ yarn-error.log
 .env.**
 .env
 !.env.example
+# react-native-config codegen
+ios/tmp.xcconfig
 **.local
+
+# gen file
+gradle-daemon-jvm.properties
