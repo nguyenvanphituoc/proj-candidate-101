@@ -3,7 +3,7 @@ import { Box, ElementField } from '@core/ui';
 
 import { useCreateInvoiceFlow } from '../context';
 import { CURRENCY_OPTIONS } from '../form';
-import { FormSection } from '../components/FormSection';
+import { FormSection } from '../shared/FormSection';
 
 export function InvoiceDetailsStep() {
   const { form } = useCreateInvoiceFlow();

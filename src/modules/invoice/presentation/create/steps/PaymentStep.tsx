@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, ElementField } from '@core/ui';
 
 import { useCreateInvoiceFlow } from '../context';
-import { FormSection } from '../components/FormSection';
+import { FormSection } from '../shared/FormSection';
 
 export function PaymentStep() {
   const { form } = useCreateInvoiceFlow();

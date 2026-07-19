@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * InvoiceDraft — everything the user provides to create an invoice
  * (TECH_SPEC §4: domain/schemas). One declaration = validation rules +
- * inferred TS type; forms consume it via zodResolver, tests directly.
+ * inferred TS type; forms consume it via zodResolver.
  *
  * Domain rule: this file imports nothing from React Native or core/ui —
  * selected options are modeled here as plain {id, label} pairs (structurally

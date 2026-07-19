@@ -4,7 +4,7 @@ import { AppText, Box, colors, radius, spacing } from '@core/ui';
 
 import { useCreateInvoiceFlow } from '../context';
 import { buildCreateInvoicePayload } from '../../../data/invoiceMapper';
-import { ReviewBlock } from '../components/ReviewBlock';
+import { ReviewBlock } from '../shared/ReviewBlock';
 
 export function ReviewStep() {
   const { form, goToStep } = useCreateInvoiceFlow();

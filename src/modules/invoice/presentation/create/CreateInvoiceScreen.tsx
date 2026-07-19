@@ -17,7 +17,7 @@ import {
   TOTAL_STEPS,
   useCreateInvoiceFlow,
 } from './context';
-import { Stepper } from './components/Stepper';
+import { Stepper } from './shared/Stepper';
 import { CustomerStep } from './steps/CustomerStep';
 import { InvoiceDetailsStep } from './steps/InvoiceDetailsStep';
 import { LineItemStep } from './steps/LineItemStep';

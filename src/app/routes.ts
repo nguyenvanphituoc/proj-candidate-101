@@ -2,10 +2,13 @@
  * All navigation types live here — app/ owns navigation, modules own screens
  * (TECH_SPEC §4 ownership decisions).
  */
+import type { InvoiceDetailParams } from '@/modules/invoice';
+
 export const Routes = {
   Login: 'Login',
   InvoiceList: 'InvoiceList',
   CreateInvoice: 'CreateInvoice',
+  InvoiceDetail: 'InvoiceDetail',
 } as const;
 
 export type AuthStackParamList = {
@@ -15,6 +18,7 @@ export type AuthStackParamList = {
 export type MainStackParamList = {
   [Routes.InvoiceList]: undefined;
   [Routes.CreateInvoice]: undefined;
+  [Routes.InvoiceDetail]: InvoiceDetailParams;
 };
 
 /**

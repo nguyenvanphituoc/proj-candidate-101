@@ -4,7 +4,7 @@ import { AppText, Box, colors, ElementField } from '@core/ui';
 
 import { useCreateInvoiceFlow } from '../context';
 import { UOM_OPTIONS } from '../form';
-import { FormSection } from '../components/FormSection';
+import { FormSection } from '../shared/FormSection';
 
 function LineTotalPreview() {
   const { form } = useCreateInvoiceFlow();

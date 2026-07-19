@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SimpleInvoice — Invoice List Flow</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --border: #d9dde3;
+    --text: #1c2430;
+    --muted: #6b7480;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --success: #16a34a;
+    --warning: #d97706;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 24px 12px;
+  }
+  .app {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 760px;
+    position: relative;
+  }
+
+  /* ---------- Header ---------- */
+  .app-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .app-header h1 { font-size: 17px; font-weight: 600; }
+  .app-header .actions { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 34px; height: 34px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: #fff; cursor: pointer; font-size: 15px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .icon-btn:hover { background: var(--bg); }
+
+  /* ---------- Toolbar: search + sort + filter ---------- */
+  .toolbar { padding: 12px 16px 8px; border-bottom: 1px solid var(--border); }
+  .search-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .search-box {
+    flex: 1; display: flex; align-items: center; gap: 6px;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 0 10px; background: #fff;
+  }
+  .search-box input {
+    border: none; outline: none; padding: 9px 0; font-size: 14px; flex: 1; background: transparent;
+  }
+  .search-box .clear { border: none; background: none; cursor: pointer; color: var(--muted); font-size: 14px; display: none; }
+  .search-box.has-value .clear { display: block; }
+
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+  .chip {
+    flex: none;
+    padding: 6px 12px;
+    font-size: 12.5px; font-weight: 500;
+    border: 1px solid var(--border); border-radius: 999px;
+    background: #fff; color: var(--muted); cursor: pointer;
+  }
+  .chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+  .meta-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 16px; font-size: 12px; color: var(--muted);
+  }
+  .sort-btn {
+    border: none; background: none; cursor: pointer;
+    font-size: 12px; color: var(--primary); font-weight: 500;
+  }
+
+  /* ---------- List ---------- */
+  .list { flex: 1; overflow-y: auto; }
+  .invoice-card {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .invoice-card:hover { background: var(--bg); }
+  .ic-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+  .ic-number { font-size: 14px; font-weight: 600; }
+  .ic-amount { font-size: 14px; font-weight: 600; }
+  .ic-mid { display: flex; justify-content: space-between; align-items: center; }
+  .ic-customer { font-size: 13px; color: var(--muted); }
+  .badge {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  }
+  .badge.Paid      { background: #ecfdf3; color: var(--success); }
+  .badge.Pending   { background: #fffbeb; color: var(--warning); }
+  .badge.Overdue   { background: #fef2f2; color: var(--danger); }
+  .ic-dates { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+
+  /* Empty / loading states */
+  .state { text-align: center; padding: 48px 24px; color: var(--muted); font-size: 13.5px; }
+  .state .big { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+
+  /* Pagination footer */
+  .load-more { padding: 12px 16px; }
+  .btn {
+    width: 100%;
+    padding: 11px;
+    font-size: 14px; font-weight: 600;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: #fff; color: var(--text);
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .btn.primary:hover { background: var(--primary-dark); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .page-info { text-align: center; font-size: 11.5px; color: var(--muted); padding: 0 0 10px; }
+
+  /* FAB -> Create invoice */
+  .fab {
+    position: absolute; right: 16px; bottom: 20px;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    border: none; font-size: 24px; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, .4);
+  }
+  .fab:hover { background: var(--primary-dark); }
+
+  /* ---------- Bottom sheets (sort / filter) ---------- */
+  .sheet-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(15, 23, 42, .4);
+    display: none;
+  }
+  .sheet-backdrop.open { display: block; }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: #fff;
+    border-radius: 14px 14px 0 0;
+    padding: 16px;
+    transform: translateY(100%);
+    transition: transform .2s ease;
+  }
+  .sheet-backdrop.open .sheet { transform: translateY(0); }
+  .sheet h3 { font-size: 15px; margin-bottom: 12px; }
+  .sheet .option {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px; cursor: pointer;
+  }
+  .sheet .option:last-of-type { border-bottom: none; }
+  .sheet .option .check { color: var(--primary); font-weight: 700; visibility: hidden; }
+  .sheet .option.selected .check { visibility: visible; }
+  .sheet .row { display: flex; gap: 10px; margin: 10px 0 4px; }
+  .sheet .field { flex: 1; }
+  .sheet label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .sheet input[type="date"] {
+    width: 100%; padding: 8px 10px; font-size: 13px;
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  .sheet .sheet-actions { display: flex; gap: 10px; margin-top: 14px; }
+
+  /* ---------- Detail view ---------- */
+  .detail {
+    position: absolute; inset: 0;
+    background: var(--card);
+    display: none;
+    flex-direction: column;
+  }
+  .detail.open { display: flex; }
+  .detail .body { flex: 1; overflow-y: auto; padding: 16px; }
+  .detail .amount-hero { text-align: center; padding: 8px 0 20px; }
+  .detail .amount-hero .amt { font-size: 28px; font-weight: 700; }
+  .detail .amount-hero .lbl { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .detail dl {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px; margin-bottom: 12px;
+  }
+  .detail dl .sec { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin: 8px 0 4px; }
+  .detail dl .sec:first-child { margin-top: 0; }
+  .detail dl div.kv { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 13px; }
+  .detail dt { color: var(--muted); }
+  .detail dd { text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ================= LIST SCREEN (home after login) ================= -->
+  <header class="app-header">
+    <h1>Invoices</h1>
+    <div class="actions">
+      <button class="icon-btn" id="btnFilter" title="Filter">&#9776;</button>
+      <button class="icon-btn" id="btnSort" title="Sort">&#8645;</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-row">
+      <div class="search-box" id="searchBox">
+        <span>&#128269;</span>
+        <input id="searchInput" placeholder="Search by invoice number…" />
+        <button class="clear" id="searchClear">&#10005;</button>
+      </div>
+    </div>
+    <div class="chips" id="statusChips">
+      <button class="chip active" data-status="">All</button>
+      <button class="chip" data-status="Paid">Paid</button>
+      <button class="chip" data-status="Pending">Pending</button>
+      <button class="chip" data-status="Overdue">Overdue</button>
+    </div>
+  </div>
+
+  <div class="meta-row">
+    <span id="resultCount">—</span>
+    <button class="sort-btn" id="sortSummary">Created date &#8595;</button>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <div class="load-more" id="loadMoreWrap">
+    <div class="page-info" id="pageInfo"></div>
+    <button class="btn" id="btnLoadMore">Load more</button>
+  </div>
+
+  <button class="fab" title="Create invoice">+</button>
+
+  <!-- ================= SORT SHEET ================= -->
+  <div class="sheet-backdrop" id="sortSheet">
+    <div class="sheet">
+      <h3>Sort by</h3>
+      <div class="option" data-sort="CREATED_DATE" data-order="DESCENDING">
+        <span>Created date — newest first</span><span class="check">&#10003;</span>
+      </div>
+      <div class="option" data-sort="CREATED_DATE" data-order="ASCENDING">
+        <span>Created date — oldest first</span><span class="check">&#10003;</span>
+      </div>
+      <div class="option" data-sort="DUE_DATE" data-order="ASCENDING">
+        <span>Due date — soonest first</span><span class="check">&#10003;</span>
+      </div>
+      <div class="option" data-sort="AMOUNT" data-order="DESCENDING">
+        <span>Amount — highest first</span><span class="check">&#10003;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FILTER SHEET ================= -->
+  <div class="sheet-backdrop" id="filterSheet">
+    <div class="sheet">
+      <h3>Filter by date</h3>
+      <div class="row">
+        <div class="field">
+          <label>From date</label>
+          <input type="date" id="fromDate" />
+        </div>
+        <div class="field">
+          <label>To date</label>
+          <input type="date" id="toDate" />
+        </div>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn" id="btnClearFilter">Clear</button>
+        <button class="btn primary" id="btnApplyFilter">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DETAIL SCREEN ================= -->
+  <div class="detail" id="detail">
+    <header class="app-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="icon-btn" id="btnDetailBack">&#8592;</button>
+        <h1 id="detailTitle">Invoice</h1>
+      </div>
+      <span class="badge" id="detailBadge"></span>
+    </header>
+    <div class="body">
+      <div class="amount-hero">
+        <div class="amt" id="detailAmount"></div>
+        <div class="lbl" id="detailDue"></div>
+      </div>
+      <dl id="detailFields"></dl>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  /* ---------------- Mock data (what Fetch Invoices API would return) ---------------- */
+  const NAMES = [["Nguyen","Dung"],["Akila","Jayasinghe"],["John","Terry"],["Mai","Tran"],["Ravi","Kumar"],["Sara","Lim"],["Duc","Pham"],["Wei","Chen"]];
+  const STATUSES = ["Paid","Pending","Overdue"];
+  const ALL = Array.from({ length: 37 }, (_, i) => {
+    const created = new Date(2026, 5, 28 - i); // spread across June/July 2026
+    const due = new Date(created); due.setDate(due.getDate() + 8);
+    const [f, l] = NAMES[i % NAMES.length];
+    return {
+      invoiceId: "id-" + i,
+      invoiceNumber: "IV16493188" + String(70000 + i * 7),
+      invoiceReference: "#" + (123400 + i),
+      customerName: f + " " + l,
+      status: STATUSES[i % 3],
+      currency: "GBP",
+      totalAmount: Math.round((300 + (i * 137) % 4200) * 100) / 100,
+      createdDate: created.toISOString().slice(0, 10),
+      dueDate: due.toISOString().slice(0, 10),
+      description: "Invoice is issued to " + f + " " + l,
+      itemName: "Honda Motor",
+      quantity: 1 + (i % 3),
+      rate: 1000
+    };
+  });
+
+  /* ---------------- Query state (mirrors the API params) ---------------- */
+  const PAGE_SIZE = 10; // pageSize
+  const state = {
+    keyword: "",          // keyword
+    status: "",           // status
+    sortBy: "CREATED_DATE",
+    ordering: "DESCENDING",
+    fromDate: "",
+    toDate: "",
+    pageNum: 1            // pageNum, starts at 1
+  };
+  let loaded = [];        // accumulated pages
+
+  /* ---------------- "API" — filters/sorts mock data like the server would ---------------- */
+  function fetchInvoices() {
+    let rows = ALL.slice();
+    if (state.keyword) rows = rows.filter(r => r.invoiceNumber.toLowerCase().includes(state.keyword.toLowerCase()));
+    if (state.status)  rows = rows.filter(r => r.status === state.status);
+    if (state.fromDate) rows = rows.filter(r => r.createdDate >= state.fromDate);
+    if (state.toDate)   rows = rows.filter(r => r.createdDate <= state.toDate);
+
+    rows.sort((a, b) => {
+      let cmp = 0;
+      if (state.sortBy === "CREATED_DATE") cmp = a.createdDate.localeCompare(b.createdDate);
+      if (state.sortBy === "DUE_DATE")     cmp = a.dueDate.localeCompare(b.dueDate);
+      if (state.sortBy === "AMOUNT")       cmp = a.totalAmount - b.totalAmount;
+      return state.ordering === "ASCENDING" ? cmp : -cmp;
+    });
+
+    const total = rows.length;
+    const start = (state.pageNum - 1) * PAGE_SIZE;
+    return { data: rows.slice(start, start + PAGE_SIZE), total: total };
+  }
+
+  /* ---------------- Rendering ---------------- */
+  const list = document.getElementById("list");
+  const resultCount = document.getElementById("resultCount");
+  const pageInfo = document.getElementById("pageInfo");
+  const btnLoadMore = document.getElementById("btnLoadMore");
+  const loadMoreWrap = document.getElementById("loadMoreWrap");
+
+  function fmtMoney(v, c) { return v.toLocaleString(undefined, { minimumFractionDigits: 2 }) + " " + c; }
+
+  function loadPage(reset) {
+    if (reset) { state.pageNum = 1; loaded = []; }
+    const res = fetchInvoices();
+    loaded = loaded.concat(res.data);
+    renderList(res.total);
+  }
+
+  function renderList(total) {
+    resultCount.textContent = total + " invoice" + (total === 1 ? "" : "s");
+
+    if (total === 0) {
+      list.innerHTML = '<div class="state"><div class="big">No invoices found</div>' +
+        (state.keyword || state.status || state.fromDate
+          ? 'Try clearing your search or filters.'
+          : 'Tap + to create your first invoice.') + '</div>';
+      loadMoreWrap.style.display = "none";
+      return;
+    }
+
+    list.innerHTML = loaded.map((r, idx) =>
+      '<div class="invoice-card" data-idx="' + idx + '">' +
+        '<div class="ic-top"><span class="ic-number">' + r.invoiceNumber + '</span>' +
+        '<span class="ic-amount">' + fmtMoney(r.totalAmount, r.currency) + '</span></div>' +
+        '<div class="ic-mid"><span class="ic-customer">' + r.customerName + '</span>' +
+        '<span class="badge ' + r.status + '">' + r.status + '</span></div>' +
+        '<div class="ic-dates">Created ' + r.createdDate + ' &middot; Due ' + r.dueDate + '</div>' +
+      '</div>').join("");
+
+    list.querySelectorAll(".invoice-card").forEach(card =>
+      card.addEventListener("click", () => openDetail(loaded[card.dataset.idx])));
+
+    const hasMore = loaded.length < total;
+    loadMoreWrap.style.display = "block";
+    btnLoadMore.style.display = hasMore ? "block" : "none";
+    pageInfo.textContent = "Showing " + loaded.length + " of " + total +
+      " — page " + state.pageNum + " (pageSize " + PAGE_SIZE + ")";
+  }
+
+  btnLoadMore.addEventListener("click", () => { state.pageNum++; loadPage(false); });
+
+  /* ---------------- Search (debounced, like the keyword param) ---------------- */
+  const searchInput = document.getElementById("searchInput");
+  const searchBox = document.getElementById("searchBox");
+  let debounce;
+  searchInput.addEventListener("input", () => {
+    searchBox.classList.toggle("has-value", searchInput.value !== "");
+    clearTimeout(debounce);
+    debounce = setTimeout(() => { state.keyword = searchInput.value.trim(); loadPage(true); }, 300);
+  });
+  document.getElementById("searchClear").addEventListener("click", () => {
+    searchInput.value = ""; searchBox.classList.remove("has-value");
+    state.keyword = ""; loadPage(true);
+  });
+
+  /* ---------------- Status chips ---------------- */
+  document.querySelectorAll("#statusChips .chip").forEach(chip =>
+    chip.addEventListener("click", () => {
+      document.querySelectorAll("#statusChips .chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      state.status = chip.dataset.status;
+      loadPage(true);
+    }));
+
+  /* ---------------- Sort sheet ---------------- */
+  const sortSheet = document.getElementById("sortSheet");
+  const sortSummary = document.getElementById("sortSummary");
+  document.getElementById("btnSort").addEventListener("click", () => sortSheet.classList.add("open"));
+  sortSheet.addEventListener("click", e => { if (e.target === sortSheet) sortSheet.classList.remove("open"); });
+
+  function syncSortUI() {
+    sortSheet.querySelectorAll(".option").forEach(o =>
+      o.classList.toggle("selected", o.dataset.sort === state.sortBy && o.dataset.order === state.ordering));
+    const labels = {
+      "CREATED_DATE-DESCENDING": "Created date \u2193",
+      "CREATED_DATE-ASCENDING": "Created date \u2191",
+      "DUE_DATE-ASCENDING": "Due date \u2191",
+      "AMOUNT-DESCENDING": "Amount \u2193"
+    };
+    sortSummary.textContent = labels[state.sortBy + "-" + state.ordering] || state.sortBy;
+  }
+  sortSheet.querySelectorAll(".option").forEach(o =>
+    o.addEventListener("click", () => {
+      state.sortBy = o.dataset.sort;
+      state.ordering = o.dataset.order;
+      syncSortUI();
+      sortSheet.classList.remove("open");
+      loadPage(true);
+    }));
+
+  /* ---------------- Filter sheet (fromDate / toDate) ---------------- */
+  const filterSheet = document.getElementById("filterSheet");
+  document.getElementById("btnFilter").addEventListener("click", () => filterSheet.classList.add("open"));
+  filterSheet.addEventListener("click", e => { if (e.target === filterSheet) filterSheet.classList.remove("open"); });
+  document.getElementById("btnApplyFilter").addEventListener("click", () => {
+    state.fromDate = document.getElementById("fromDate").value;
+    state.toDate = document.getElementById("toDate").value;
+    filterSheet.classList.remove("open");
+    loadPage(true);
+  });
+  document.getElementById("btnClearFilter").addEventListener("click", () => {
+    document.getElementById("fromDate").value = "";
+    document.getElementById("toDate").value = "";
+    state.fromDate = ""; state.toDate = "";
+    filterSheet.classList.remove("open");
+    loadPage(true);
+  });
+
+  /* ---------------- Detail view ---------------- */
+  const detail = document.getElementById("detail");
+  document.getElementById("btnDetailBack").addEventListener("click", () => detail.classList.remove("open"));
+
+  function openDetail(r) {
+    document.getElementById("detailTitle").textContent = r.invoiceNumber;
+    const badge = document.getElementById("detailBadge");
+    badge.textContent = r.status;
+    badge.className = "badge " + r.status;
+    document.getElementById("detailAmount").textContent = fmtMoney(r.totalAmount, r.currency);
+    document.getElementById("detailDue").textContent = "Due " + r.dueDate;
+
+    document.getElementById("detailFields").innerHTML =
+      '<div class="sec">Invoice</div>' +
+      kv("Reference", r.invoiceReference) +
+      kv("Created", r.createdDate) +
+      kv("Description", r.description) +
+      '<div class="sec">Customer</div>' +
+      kv("Name", r.customerName) +
+      '<div class="sec">Line item</div>' +
+      kv("Item", r.itemName) +
+      kv("Qty × rate", r.quantity + " × " + fmtMoney(r.rate, r.currency));
+    detail.classList.add("open");
+  }
+  function kv(k, v) { return '<div class="kv"><dt>' + k + '</dt><dd>' + v + '</dd></div>'; }
+
+  /* ---------------- Init ---------------- */
+  syncSortUI();
+  loadPage(true);
+})();
+</script>
+</body>
+</html>

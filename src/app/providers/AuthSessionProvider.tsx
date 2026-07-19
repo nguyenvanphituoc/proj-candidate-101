@@ -21,9 +21,7 @@ export const AuthSessionProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [status, setStatus] = useState<'rehydrating' | 'rehydrated'>(
-    'rehydrated',
-  );
+  const [status] = useState<'rehydrating' | 'rehydrated'>('rehydrated');
   const [session, setSession] = useState<any>(is_auth);
 
   const signIn = async (_username: string, _password: string) => {

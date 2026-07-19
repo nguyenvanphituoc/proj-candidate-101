@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { SystemBars } from 'react-native-edge-to-edge';
-import { Spinner } from '@core/ui';
+import { RootModal, RootModalProvider, Spinner } from '@core/ui';
 import { AppProviders } from './providers';
 import { useAuthSession } from './providers/AuthSessionProvider';
 import { AuthStack } from './(auth)/_layout';
@@ -31,7 +31,11 @@ export function AppRoot() {
   return (
     <AppProviders>
       <SystemBars style="auto" />
-      <RootNavigator />
+      <RootModalProvider>
+        <RootNavigator />
+        {/* Last child on purpose — absolute overlay stacks above every screen */}
+        <RootModal />
+      </RootModalProvider>
     </AppProviders>
   );
 }

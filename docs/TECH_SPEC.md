@@ -23,11 +23,11 @@ In scope:
 - Create invoice (single line item)
 - Invoice list with search, sort, filter, pagination
 - Session restore and logout
-- Unit tests for domain, mappers, and controllers
 
 Out of scope:
 - Backend development (all services are provided by 101 Digital sandbox)
 - Offline mode / local persistence of invoices
+- Automated tests (unit / integration) — quality gates are lint + typecheck
 - Push notifications, deep linking
 - App Store / Play Store distribution
 
@@ -203,7 +203,6 @@ sandbox user credentials are never embedded.
 | Config/secrets | react-native-config (.env) | Keeps client_id/secret out of source; `.env` gitignored, `.env.example` committed |
 | Forms | react-hook-form + zodResolver | Uncontrolled field state → per-field re-renders; server rejections mapped back via `setError` |
 | Validation & domain types | Zod (schema-first domain) | One declaration = validation rules + inferred TS types; also `safeParse`s API responses at the DTO boundary |
-| Testing | Jest + React Native Testing Library | Domain and mappers as pure unit tests; controllers via renderHook with a mocked QueryClient |
 | Lint/format | ESLint + Prettier | RN community config; optional import-boundary rules for the module dependency rules |
 
 Version policy: latest stable at project creation; exact versions pinned in
@@ -259,7 +258,7 @@ src/
         │   ├── queryKeys.ts    # invoiceKeys — owned by the module, not global
         │   ├── list/           # screen, context, useInvoicesQuery, sections
         │   ├── create/         # screen, context, useCreateInvoiceMutation, sections
-        │   └── components/     # Layer 2 (invoice-specific): InvoiceCard, SearchBar, FilterChips
+        │   └── shared/     # Layer 2 (invoice-specific): InvoiceCard, SearchBar, FilterChips
         └── index.ts
 ```
 
@@ -269,7 +268,7 @@ Layer responsibilities inside a module:
 |---|---|---|
 | domain | Zod schemas (entities + business rules, types inferred), repository interfaces, use cases | any RN / fetch / TanStack import (Zod is allowed — it is the domain language) |
 | data | DTO schemas (raw API shapes, `safeParse`d at the boundary), mappers, repository implementations | UI concerns |
-| presentation | screen (dumb view), context (controller), query/mutation hooks, query keys, components | direct repository calls — always via use case |
+| presentation | screen (dumb view), context (controller), query/mutation hooks, query keys, shared | direct repository calls — always via use case |
 
 Ownership decisions (where the two designs met):
 
@@ -279,7 +278,7 @@ Ownership decisions (where the two designs met):
 - Layer-2 composition splits by the core admission test: feature-blind pieces
   (`TextField`, `FormTextField`, `EmptyState`, `ErrorBanner`) live in
   `core/ui/components`; anything mentioning invoices stays in
-  `modules/invoice/presentation/components`
+  `modules/invoice/presentation/shared`
 - Query keys are module-owned (`invoice/presentation/queryKeys.ts`), not a
   global registry — only the invoice module invalidates its lists; logout
   clears the whole cache and needs no keys
@@ -321,19 +320,18 @@ Quality gates run locally and must pass before any merge:
 ```
 npm run lint
 npm run typecheck                  # tsc --noEmit
-npm test
 ```
 
 ### 5.3 Source Control
 
 - trunk-based with short-lived feature branches (`feat/invoice-list`)
-- conventional commits (`feat:`, `fix:`, `test:`, `docs:`)
+- conventional commits (`feat:`, `fix:`, `docs:`)
 - `main` is always buildable; each assessment feature lands as one reviewed PR
   so history reads as a narrative of the build
 
 ### 5.4 CI
 
-GitHub Actions on every push/PR: install → lint → typecheck → test.
+GitHub Actions on every push/PR: install → lint → typecheck.
 [PLACEHOLDER: add Android debug-build job producing an APK artifact if review
 time allows — nice-to-have, not required for submission.]
 

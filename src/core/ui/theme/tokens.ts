@@ -10,7 +10,11 @@ export const colors = {
   danger: '#DC2626',
   dangerSurface: '#FEF2F2',
   success: '#16A34A',
+  successSurface: '#ECFDF3',
+  warning: '#D97706',
+  warningSurface: '#FFFBEB',
   disabled: '#94A3B8',
+  overlay: 'rgba(15, 23, 42, 0.45)',
 } as const;
 
 export const spacing = {
