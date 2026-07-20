@@ -12,6 +12,13 @@ export type RequestInterceptor = (
   config: HttpRequestConfig,
 ) => HttpRequestConfig | Promise<HttpRequestConfig>;
 
+/** Runs after a successful (2xx) response is parsed; may observe or
+ *  transform the parsed body before it reaches the caller. */
+export type ResponseInterceptor = (
+  data: unknown,
+  config: HttpRequestConfig,
+) => unknown | Promise<unknown>;
+
 /**
  * Runs when a request ends in an ApiError, before it is thrown; may observe
  * (401 → force logout) or replace the error with a transformed one.
@@ -40,12 +47,14 @@ export class InterceptorChain<T> {
 
 export interface HttpInterceptors {
   request: InterceptorChain<RequestInterceptor>;
+  response: InterceptorChain<ResponseInterceptor>;
   error: InterceptorChain<ErrorInterceptor>;
 }
 
 export function createInterceptors(): HttpInterceptors {
   return {
     request: new InterceptorChain<RequestInterceptor>(),
+    response: new InterceptorChain<ResponseInterceptor>(),
     error: new InterceptorChain<ErrorInterceptor>(),
   };
 }

@@ -9,6 +9,7 @@ export {
 export type {
   ErrorInterceptor,
   RequestInterceptor,
+  ResponseInterceptor,
 } from './interceptors';
 export type {
   HttpMethod,

@@ -116,7 +116,11 @@ export function createHttpClient(clientConfig: HttpClientConfig): HttpClient {
       for (const interceptor of interceptors.request.all) {
         config = await interceptor(config);
       }
-      return (await execute(config)) as T;
+      let data = await execute(config);
+      for (const interceptor of interceptors.response.all) {
+        data = await interceptor(data, config);
+      }
+      return data as T;
     } catch (error) {
       let normalized = ApiError.isApiError(error)
         ? error
